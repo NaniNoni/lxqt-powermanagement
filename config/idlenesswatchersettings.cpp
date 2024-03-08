@@ -27,6 +27,7 @@
 
 #include <QComboBox>
 #include <QDebug>
+#include <QDialog>
 
 #include "idlenesswatchersettings.h"
 #include "ui_idlenesswatchersettings.h"
@@ -67,6 +68,10 @@ void IdlenessWatcherSettings::mConnectSignals()
     connect(mUi->idleBatteryActionComboBox,        QOverload<int>::of(&QComboBox::activated),   this, &IdlenessWatcherSettings::saveSettings);
     connect(mUi->idleBatteryTimeEdit,              &QTimeEdit::editingFinished,                 this, &IdlenessWatcherSettings::saveSettings);
 
+    connect(mUi->pauseIdlenessCheckTimesListWidget,&QListWidget::itemChanged,                   this, &IdlenessWatcherSettings::saveSettings);
+    connect(mUi->addPauseIdlenessCheckTimeButton,  &QPushButton::pressed,                       this, &IdlenessWatcherSettings::addPauseIdlenessCheckTimeButtonPressed);
+    connect(mUi->removePauseIdlenessCheckTimeButton,&QPushButton::pressed,                      this, &IdlenessWatcherSettings::removePauseIdlenessCheckTimeButtonPressed);
+
     connect(mUi->checkBacklightButton,             &QPushButton::pressed,                       this, &IdlenessWatcherSettings::backlightCheckButtonPressed);
     connect(mUi->checkBacklightButton,             &QPushButton::released,                      this, &IdlenessWatcherSettings::backlightCheckButtonReleased);
 
@@ -85,6 +90,10 @@ void IdlenessWatcherSettings::mDisconnectSignals()
     disconnect(mUi->idleACTimeEdit,                   &QTimeEdit::editingFinished,                 this, &IdlenessWatcherSettings::saveSettings);
     disconnect(mUi->idleBatteryActionComboBox,        QOverload<int>::of(&QComboBox::activated),   this, &IdlenessWatcherSettings::saveSettings);
     disconnect(mUi->idleBatteryTimeEdit,              &QTimeEdit::editingFinished,                 this, &IdlenessWatcherSettings::saveSettings);
+
+    disconnect(mUi->pauseIdlenessCheckTimesListWidget,&QListWidget::itemChanged,                   this, &IdlenessWatcherSettings::saveSettings);
+    disconnect(mUi->addPauseIdlenessCheckTimeButton,  &QPushButton::pressed,                       this, &IdlenessWatcherSettings::addPauseIdlenessCheckTimeButtonPressed);
+    disconnect(mUi->removePauseIdlenessCheckTimeButton,&QPushButton::pressed,                      this, &IdlenessWatcherSettings::removePauseIdlenessCheckTimeButtonPressed);
 
     disconnect(mUi->checkBacklightButton,             &QPushButton::pressed,                       this, &IdlenessWatcherSettings::backlightCheckButtonPressed);
     disconnect(mUi->checkBacklightButton,             &QPushButton::released,                      this, &IdlenessWatcherSettings::backlightCheckButtonReleased);
@@ -113,6 +122,10 @@ void IdlenessWatcherSettings::loadSettings()
     setComboBoxToValue(mUi->idleBatteryActionComboBox, mSettings.getIdlenessBatteryAction());
     mUi->idleBatteryTimeEdit->setTime(mSettings.getIdlenessBatteryTime());
 
+    for (QTime time : mSettings.getPauseIdlenessCheckTimes()) {
+        new QListWidgetItem(time.toString(), mUi->pauseIdlenessCheckTimesListWidget);
+    }
+
     if(mBacklight->isBacklightAvailable()) {
         mUi->idlenessBacklightWatcherGroupBox->setChecked(mSettings.isIdlenessBacklightWatcherEnabled());
         mUi->idleTimeBacklightTimeEdit->setTime(mSettings.getIdlenessBacklightTime());
@@ -133,11 +146,52 @@ void IdlenessWatcherSettings::saveSettings()
     mSettings.setIdlenessBatteryAction(currentValue(mUi->idleBatteryActionComboBox));
     mSettings.setIdlenessBatteryTime(mUi->idleBatteryTimeEdit->time());
 
+    QList<QTime> times;
+    times.reserve(mUi->pauseIdlenessCheckTimesListWidget->count());
+
+    for (int i = 0; i < mUi->pauseIdlenessCheckTimesListWidget->count(); i++) {
+        QListWidgetItem* item = mUi->pauseIdlenessCheckTimesListWidget->item(i);
+        times.append(QTime::fromString(item->text()));
+    }
+    mSettings.setPauseIdlenessCheckTimes(times);
+
     mSettings.setIdlenessBacklightWatcherEnabled(mBacklight->isBacklightAvailable() ? mUi->idlenessBacklightWatcherGroupBox->isChecked() : false);
     mSettings.setIdlenessBacklightTime(mUi->idleTimeBacklightTimeEdit->time());
     mSettings.setBacklight(mUi->backlightSlider->value());
     mSettings.setIdlenessBacklightOnBatteryDischargingEnabled(mUi->onBatteryDischargingCheckBox->isChecked());
     mSettings.setDisableIdlenessWhenFullscreen(mUi->disableIdlenessFullscreenBox->isChecked());
+}
+
+void IdlenessWatcherSettings::addPauseIdlenessCheckTimeButtonPressed() {
+    // Create a custom dialog
+    QDialog* dialog = new QDialog(mUi->addPauseIdlenessCheckTimeButton);
+    dialog->setWindowTitle(QSL("Enter Time"));
+
+    QVBoxLayout* layout = new QVBoxLayout(dialog);
+
+    QTimeEdit* timeEdit = new QTimeEdit(dialog);
+    timeEdit->setDisplayFormat(QSL("HH:mm:ss"));
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, dialog);
+
+    layout->addWidget(timeEdit);
+    layout->addWidget(buttonBox);
+
+    connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+
+    // Show the dialog
+    if (dialog->exec() == QDialog::Accepted) {
+        // User clicked OK, retrieve the entered time from QTimeEdit
+        QTime selectedTime = timeEdit->time();
+        qDebug() << "Selected Time: " << selectedTime.toString(QSL("HH:mm:ss"));
+    } else {
+        // User clicked Cancel
+        qDebug() << "Dialog Canceled";
+    }
+}
+
+void IdlenessWatcherSettings::removePauseIdlenessCheckTimeButtonPressed() {
+    qDeleteAll(mUi->pauseIdlenessCheckTimesListWidget->selectedItems());
 }
 
 void IdlenessWatcherSettings::backlightCheckButtonPressed()

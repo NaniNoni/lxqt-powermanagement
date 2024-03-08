@@ -108,6 +108,9 @@ public:
     QTime getIdlenessBatteryTime();
     void setIdlenessBatteryTime(QTime idlenessTime);
 
+    QList<QTime> getPauseIdlenessCheckTimes();
+    void setPauseIdlenessCheckTimes(QList<QTime> pauseIdlenessTimes);
+
     bool isIdlenessBacklightWatcherEnabled();
     void setIdlenessBacklightWatcherEnabled(bool idlenessBacklightWatcherEnabled);
 

@@ -52,13 +52,11 @@ public:
     TrayIcon(Solid::Battery *battery, QObject *parent = nullptr);
     ~TrayIcon() override;
 
-    static int getPauseInterval(PAUSE duration);
-
-    void setPause(PAUSE duration);
+    void setPause(QTime duration);
 
 signals:
     void toggleShowInfo();
-    void pauseChanged(PAUSE duration);
+    void pauseChanged(QTime duration);
 
 public slots:
     void iconChanged();
@@ -74,6 +72,7 @@ private slots:
 private:
     QIcon emblemizedIcon();
 
+    PowerManagementSettings mSettings;
     Solid::Battery *mBattery;
     IconProducer mIconProducer;
     QMenu mContextMenu;

@@ -72,25 +72,12 @@ TrayIcon::TrayIcon(Solid::Battery *battery, QObject *parent)
     mPauseActions->setExclusionPolicy(QActionGroup::ExclusionPolicy::ExclusiveOptional);
     connect(mPauseActions, &QActionGroup::triggered, this, &TrayIcon::onPauseTriggered);
 
-    QAction *a = new QAction(tr("30 minutes"), mPauseActions);
-    a->setCheckable(true);
-    a->setData(PAUSE::Half);
-
-    a = new QAction(tr("1 hour"), mPauseActions);
-    a->setCheckable(true);
-    a->setData(PAUSE::One);
-
-    a = new QAction(tr("2 hours"), mPauseActions);
-    a->setCheckable(true);
-    a->setData(PAUSE::Two);
-
-    a = new QAction(tr("3 hours"), mPauseActions);
-    a->setCheckable(true);
-    a->setData(PAUSE::Three);
-
-    a = new QAction(tr("4 hours"), mPauseActions);
-    a->setCheckable(true);
-    a->setData(PAUSE::Four);
+    for (const QTime time : mSettings.getPauseIdlenessCheckTimes())
+    {
+        QAction *a = new QAction(time.toString(), mPauseActions);
+        a->setCheckable(true);
+        a->setData(time);
+    }
 
     QMenu *pauseMenu = mContextMenu.addMenu(XdgIcon::fromTheme(QStringLiteral("media-playback-pause")),
                                             tr("Pause idleness checks"));
@@ -183,8 +170,7 @@ void TrayIcon::onConfigureTriggered()
 
 void TrayIcon::onPauseTriggered(QAction *action)
 {
-    emit pauseChanged(!action->isChecked() ? PAUSE::None
-                                           : static_cast<PAUSE>(action->data().toInt()));
+    emit pauseChanged(!action->isChecked() ? QTime() : action->data().value<QTime>());
 }
 
 void TrayIcon::onAboutTriggered()
@@ -227,11 +213,11 @@ void TrayIcon::onActivated(QSystemTrayIcon::ActivationReason reason)
     if (Trigger == reason) emit toggleShowInfo();
 }
 
-void TrayIcon::setPause(PAUSE duration)
+void TrayIcon::setPause(QTime duration)
 {
     // add/remove the pause emblem and correct the checked action if needed
     QAction *checked = mPauseActions->checkedAction();
-    if (duration == PAUSE::None)
+    if (duration.isNull())
     {
         PowerManagementSettings().setIdlenessWatcherPaused(false);
         if (mHasPauseEmblem)
@@ -244,12 +230,13 @@ void TrayIcon::setPause(PAUSE duration)
         PowerManagementSettings().setIdlenessWatcherPaused(true);
         if (!mHasPauseEmblem)
             iconChanged(); // adds the pause emblem
-        if (checked == nullptr || checked->data().toInt() != duration)
+
+        if (checked == nullptr || checked->data().value<QTime>() != duration)
         {
             const auto actions = mPauseActions->actions();
             for (const auto &a : actions)
             {
-                if (a->data().toInt() == duration)
+                if (a->data().value<QTime>() == duration)
                 {
                     a->setChecked(true);
                     break;
@@ -258,11 +245,3 @@ void TrayIcon::setPause(PAUSE duration)
         }
     }
 }
-
-// static
-int TrayIcon::getPauseInterval(PAUSE duration)
-{
-    // multiplied by 30 minutes.
-    return duration * 1800 * 1000;
-}
-

@@ -54,6 +54,7 @@ namespace PowerManagementSettingsConstants
     const QString IDLENESS_AC_TIME { QL1S("idlenessACTime") };
     const QString IDLENESS_BATTERY_ACTION_KEY { QL1S("idlenessBatteryAction") };
     const QString IDLENESS_BATTERY_TIME { QL1S("idlenessBatteryTime") };
+    const QString PAUSE_IDLENESS_CHECK_TIMES { QL1S("pauseIdlenessCheckTimes") };
     const QString IDLENESS_BACKLIGHT_TIME { QL1S("idlenessTime") };
     const QString IDLENESS_BACKLIGHT { QL1S("backlightIdleness") };
     const QString IDLENESS_BACKLIGHT_ON_BATTERY_DISCHARGING { QL1S("backlightIdlenessOnBatteryDischarging") };
@@ -274,6 +275,26 @@ QTime PowerManagementSettings::getIdlenessBatteryTime()
 void PowerManagementSettings::setIdlenessBatteryTime(QTime idlenessTime)
 {
     setValue(IDLENESS_BATTERY_TIME, idlenessTime);
+}
+
+QList<QTime> PowerManagementSettings::getPauseIdlenessCheckTimes() {
+    QVariant variantList = value(PAUSE_IDLENESS_CHECK_TIMES, QVariant::fromValue(QList<QTime> {
+        QTime(0, 30),
+        QTime(1, 0),
+        QTime(2, 0),
+        QTime(3, 0),
+        QTime(4, 0)
+    }));
+    
+    qCritical() << "Getting pause idleness times: " << variantList.value<QList<QTime>>();
+
+    return variantList.value<QList<QTime>>();
+}
+
+void PowerManagementSettings::setPauseIdlenessCheckTimes(QList<QTime> pauseIdlenessTimes) {
+    QVariant variantList = QVariant::fromValue(pauseIdlenessTimes);
+    qCritical() << "Setting pause idleness times: " << variantList.value<QList<QTime>>();
+    setValue(PAUSE_IDLENESS_CHECK_TIMES, variantList);
 }
 
 bool PowerManagementSettings::isIdlenessBacklightWatcherEnabled()

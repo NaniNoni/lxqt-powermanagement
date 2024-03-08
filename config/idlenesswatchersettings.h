@@ -50,6 +50,10 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void saveSettings();
+
+    void addPauseIdlenessCheckTimeButtonPressed();
+    void removePauseIdlenessCheckTimeButtonPressed();
+
     void backlightCheckButtonPressed();
     void backlightCheckButtonReleased();
 

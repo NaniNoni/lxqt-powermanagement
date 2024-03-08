@@ -188,12 +188,12 @@ void BatteryWatcher::settingsChanged()
 void BatteryWatcher::onPauseTimeout()
 {
     for (const auto &trayIcon : qAsConst(mTrayIcons))
-        trayIcon->setPause(TrayIcon::PAUSE::None);
+        trayIcon->setPause(QTime());
 }
 
-void BatteryWatcher::setPause(TrayIcon::PAUSE duration)
+void BatteryWatcher::setPause(QTime duration)
 {
-    if (duration == TrayIcon::PAUSE::None)
+    if (duration.isNull())
     {
         onPauseTimeout();
         mPauseTimer.stop();
@@ -202,6 +202,8 @@ void BatteryWatcher::setPause(TrayIcon::PAUSE duration)
     {
         for (const auto &trayIcon : qAsConst(mTrayIcons))
             trayIcon->setPause(duration);
-        mPauseTimer.start(TrayIcon::getPauseInterval(duration));
+        
+        int millis = duration.msecsSinceStartOfDay();
+        mPauseTimer.start(millis);
     }
 }

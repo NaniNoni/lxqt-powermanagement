@@ -48,7 +48,7 @@ private slots:
     void batteryChanged();
     void settingsChanged();
     void onPauseTimeout();
-    void setPause(TrayIcon::PAUSE duration);
+    void setPause(QTime duration);
 
 private:
     QList<Solid::Battery*> mBatteries;
